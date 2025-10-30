@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estoque Auto - Leitor de Código de Barras</title>
+    <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --light: #ecf0f1;
+            --dark: #34495e;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: var(--primary);
+            color: white;
+            padding: 15px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo h1 {
+            font-size: 1.5rem;
+        }
+        
+        .logo-icon {
+            font-size: 1.8rem;
+        }
+        
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 20px;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        nav a:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+        
+        .app-title {
+            text-align: center;
+            margin: 20px 0;
+            color: var(--primary);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .card-title {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            color: var(--primary);
+        }
+        
+        .scanner-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        #reader {
+            width: 100%;
+            max-width: 500px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .scanner-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: var(--secondary);
+            color: white;
+        }
+        
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+        
+        .btn-warning {
+            background-color: var(--warning);
+            color: white;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        
+        .search-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .item-details {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border-left: 4px solid var(--secondary);
+        }
+        
+        .item-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 0.9rem;
+        }
+        
+        .info-value {
+            font-size: 1.1rem;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .inventory-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .inventory-table th, 
+        .inventory-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .inventory-table th {
+            background-color: var(--light);
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        .inventory-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .status-in-stock {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-low-stock {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-out-of-stock {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 4px;
+            color: white;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none;
+        }
+        
+        .notification-success {
+            background-color: var(--success);
+        }
+        
+        .notification-error {
+            background-color: var(--danger);
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: #7f8c8d;
+            border-top: 1px solid #eee;
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            nav ul {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .search-section {
+                flex-direction: column;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <div class="logo">
+                <span class="logo-icon">🔧</span>
+                <h1>Estoque Auto</h1>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#" class="active">Leitor</a></li>
+                    <li><a href="#">Inventário</a></li>
+                    <li><a href="#">Relatórios</a></li>
+                    <li><a href="#">Configurações</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <h2 class="app-title">Leitor de Código de Barras - Separação de Peças</h2>
+        
+        <div class="card">
+            <h3 class="card-title">Scanner de Código de Barras</h3>
+            <div class="scanner-section">
+                <div id="reader"></div>
+                <div class="scanner-controls">
+                    <button id="startScanner" class="btn btn-primary">Iniciar Scanner</button>
+                    <button id="stopScanner" class="btn btn-danger" disabled>Parar Scanner</button>
+                </div>
+            </div>
+            
+            <div class="search-section">
+                <input type="text" class="search-input" id="manualInput" placeholder="Digite o código manualmente...">
+                <button id="searchBtn" class="btn btn-primary">Buscar</button>
+            </div>
+            
+            <div id="itemDetails" class="item-details">
+                <h3>Detalhes da Peça</h3>
+                <div class="item-info">
+                    <div class="info-item">
+                        <span class="info-label">Código</span>
+                        <span class="info-value" id="itemCode">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Nome</span>
+                        <span class="info-value" id="itemName">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Categoria</span>
+                        <span class="info-value" id="itemCategory">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Fabricante</span>
+                        <span class="info-value" id="itemManufacturer">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Estoque Atual</span>
+                        <span class="info-value" id="itemStock">-</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Localização</span>
+                        <span class="info-value" id="itemLocation">-</span>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button id="separateItem" class="btn btn-success">Separar Peça</button>
+                    <button id="adjustStock" class="btn btn-warning">Ajustar Estoque</button>
+                    <button id="viewHistory" class="btn btn-primary">Ver Histórico</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3 class="card-title">Movimentações Recentes</h3>
+            <table class="inventory-table">
+                <thead>
+                    <tr>
+                        <th>Data/Hora</th>
+                        <th>Código</th>
+                        <th>Peça</th>
+                        <th>Tipo</th>
+                        <th>Quantidade</th>
+                        <th>Usuário</th>
+                    </tr>
+                </thead>
+                <tbody id="movementsTable">
+                    <!-- As movimentações serão preenchidas via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <div id="notification" class="notification"></div>
+    
+    <footer>
+        <div class="container">
+            <p>Estoque Auto - Sistema de Gestão de Peças Automotivas &copy; 2023</p>
+        </div>
+    </footer>
+
+    <script>
+        // Dados de exemplo para demonstração
+        const sampleItems = {
+            "7891234567890": {
+                code: "7891234567890",
+                name: "Filtro de Óleo",
+                category: "Filtros",
+                manufacturer: "Bosch",
+                stock: 15,
+                location: "A12-B4"
+            },
+            "7891234567891": {
+                code: "7891234567891",
+                name: "Pastilha de Freio Dianteira",
+                category: "Freios",
+                manufacturer: "TRW",
+                stock: 8,
+                location: "B7-C2"
+            },
+            "7891234567892": {
+                code: "7891234567892",
+                name: "Vela de Ignição",
+                category: "Ignicação",
+                manufacturer: "NGK",
+                stock: 24,
+                location: "C3-A8"
+            },
+            "7891234567893": {
+                code: "7891234567893",
+                name: "Correia Dentada",
+                category: "Motor",
+                manufacturer: "Gates",
+                stock: 5,
+                location: "D5-E1"
+            },
+            "7891234567894": {
+                code: "7891234567894",
+                name: "Amortecedor Dianteiro",
+                category: "Suspensão",
+                manufacturer: "Monroe",
+                stock: 3,
+                location: "E9-F3"
+            }
+        };
+
+        // Histórico de movimentações
+        let movements = [
+            {
+                date: "2023-10-15 14:30",
+                code: "7891234567890",
+                name: "Filtro de Óleo",
+                type: "Separação",
+                quantity: 2,
+                user: "João Silva"
+            },
+            {
+                date: "2023-10-15 13:15",
+                code: "7891234567891",
+                name: "Pastilha de Freio Dianteira",
+                type: "Separação",
+                quantity: 1,
+                user: "Maria Santos"
+            },
+            {
+                date: "2023-10-15 11:45",
+                code: "7891234567892",
+                name: "Vela de Ignição",
+                type: "Separação",
+                quantity: 4,
+                user: "Carlos Oliveira"
+            },
+            {
+                date: "2023-10-14 16:20",
+                code: "7891234567893",
+                name: "Correia Dentada",
+                type: "Separação",
+                quantity: 1,
+                user: "Ana Costa"
+            }
+        ];
+
+        // Elementos DOM
+        const startScannerBtn = document.getElementById('startScanner');
+        const stopScannerBtn = document.getElementById('stopScanner');
+        const manualInput = document.getElementById('manualInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const itemDetails = document.getElementById('itemDetails');
+        const separateItemBtn = document.getElementById('separateItem');
+        const adjustStockBtn = document.getElementById('adjustStock');
+        const viewHistoryBtn = document.getElementById('viewHistory');
+        const movementsTable = document.getElementById('movementsTable');
+        const notification = document.getElementById('notification');
+
+        // Elementos de detalhes do item
+        const itemCode = document.getElementById('itemCode');
+        const itemName = document.getElementById('itemName');
+        const itemCategory = document.getElementById('itemCategory');
+        const itemManufacturer = document.getElementById('itemManufacturer');
+        const itemStock = document.getElementById('itemStock');
+        const itemLocation = document.getElementById('itemLocation');
+
+        // Scanner de código de barras
+        let html5QrcodeScanner;
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            updateMovementsTable();
+            
+            startScannerBtn.addEventListener('click', startScanner);
+            stopScannerBtn.addEventListener('click', stopScanner);
+            searchBtn.addEventListener('click', searchItem);
+            separateItemBtn.addEventListener('click', separateItem);
+            adjustStockBtn.addEventListener('click', adjustStock);
+            viewHistoryBtn.addEventListener('click', viewHistory);
+            
+            // Permitir busca com Enter
+            manualInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    searchItem();
+                }
+            });
+        });
+
+        // Função para iniciar o scanner
+        function startScanner() {
+            html5QrcodeScanner = new Html5QrcodeScanner(
+                "reader",
+                { 
+                    fps: 10, 
+                    qrbox: { width: 250, height: 150 } 
+                },
+                false
+            );
+            
+            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+            
+            startScannerBtn.disabled = true;
+            stopScannerBtn.disabled = false;
+            
+            showNotification("Scanner iniciado. Aponte para o código de barras.", "success");
+        }
+
+        // Função para parar o scanner
+        function stopScanner() {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.clear().catch(error => {
+                    console.error("Falha ao limpar o scanner: ", error);
+                });
+            }
+            
+            startScannerBtn.disabled = false;
+            stopScannerBtn.disabled = true;
+            
+            showNotification("Scanner parado.", "success");
+        }
+
+        // Callback de sucesso na leitura
+        function onScanSuccess(decodedText, decodedResult) {
+            // Parar o scanner após uma leitura bem-sucedida
+            stopScanner();
+            
+            // Processar o código lido
+            processScannedCode(decodedText);
+        }
+
+        // Callback de falha na leitura
+        function onScanFailure(error) {
+            // Apenas logar o erro, não exibir para o usuário
+            console.warn(`Falha na leitura: ${error}`);
+        }
+
+        // Processar código escaneado ou digitado
+        function processScannedCode(code) {
+            // Limpar o campo de entrada manual
+            manualInput.value = code;
+            
+            // Buscar o item
+            searchItemByCode(code);
+        }
+
+        // Buscar item pelo código
+        function searchItemByCode(code) {
+            const item = sampleItems[code];
+            
+            if (item) {
+                // Exibir detalhes do item
+                displayItemDetails(item);
+                showNotification("Peça encontrada!", "success");
+            } else {
+                // Item não encontrado
+                hideItemDetails();
+                showNotification("Peça não encontrada no sistema.", "error");
+            }
+        }
+
+        // Exibir detalhes do item
+        function displayItemDetails(item) {
+            itemCode.textContent = item.code;
+            itemName.textContent = item.name;
+            itemCategory.textContent = item.category;
+            itemManufacturer.textContent = item.manufacturer;
+            itemStock.textContent = item.stock;
+            itemLocation.textContent = item.location;
+            
+            itemDetails.style.display = 'block';
+        }
+
+        // Ocultar detalhes do item
+        function hideItemDetails() {
+            itemDetails.style.display = 'none';
+        }
+
+        // Buscar item (botão ou Enter)
+        function searchItem() {
+            const code = manualInput.value.trim();
+            
+            if (code) {
+                processScannedCode(code);
+            } else {
+                showNotification("Digite um código para buscar.", "error");
+            }
+        }
+
+        // Separar peça (diminuir estoque)
+        function separateItem() {
+            const code = itemCode.textContent;
+            
+            if (code && code !== '-') {
+                const item = sampleItems[code];
+                
+                if (item && item.stock > 0) {
+                    // Diminuir estoque
+                    item.stock -= 1;
+                    
+                    // Registrar movimentação
+                    const movement = {
+                        date: new Date().toLocaleString('pt-BR'),
+                        code: item.code,
+                        name: item.name,
+                        type: "Separação",
+                        quantity: 1,
+                        user: "Usuário Atual" // Em um app real, seria o usuário logado
+                    };
+                    
+                    movements.unshift(movement);
+                    
+                    // Atualizar interface
+                    itemStock.textContent = item.stock;
+                    updateMovementsTable();
+                    
+                    showNotification(`Peça "${item.name}" separada com sucesso!`, "success");
+                } else {
+                    showNotification("Estoque insuficiente para separação.", "error");
+                }
+            } else {
+                showNotification("Nenhuma peça selecionada.", "error");
+            }
+        }
+
+        // Ajustar estoque
+        function adjustStock() {
+            const code = itemCode.textContent;
+            
+            if (code && code !== '-') {
+                const newStock = prompt("Digite a nova quantidade em estoque:");
+                
+                if (newStock !== null && !isNaN(newStock) && newStock.trim() !== '') {
+                    const quantity = parseInt(newStock);
+                    
+                    if (quantity >= 0) {
+                        const item = sampleItems[code];
+                        const oldStock = item.stock;
+                        
+                        // Atualizar estoque
+                        item.stock = quantity;
+                        
+                        // Registrar movimentação
+                        const movement = {
+                            date: new Date().toLocaleString('pt-BR'),
+                            code: item.code,
+                            name: item.name,
+                            type: "Ajuste de Estoque",
+                            quantity: quantity - oldStock,
+                            user: "Usuário Atual"
+                        };
+                        
+                        movements.unshift(movement);
+                        
+                        // Atualizar interface
+                        itemStock.textContent = item.stock;
+                        updateMovementsTable();
+                        
+                        showNotification(`Estoque de "${item.name}" ajustado para ${quantity}.`, "success");
+                    } else {
+                        showNotification("A quantidade deve ser um número não negativo.", "error");
+                    }
+                } else if (newStock !== null) {
+                    showNotification("Por favor, digite um valor válido.", "error");
+                }
+            } else {
+                showNotification("Nenhuma peça selecionada.", "error");
+            }
+        }
+
+        // Ver histórico (simulação)
+        function viewHistory() {
+            const code = itemCode.textContent;
+            
+            if (code && code !== '-') {
+                alert(`Abrindo histórico completo da peça ${code}`);
+                // Em um app real, isso abriria uma nova tela ou modal com o histórico completo
+            } else {
+                showNotification("Nenhuma peça selecionada.", "error");
+            }
+        }
+
+        // Atualizar tabela de movimentações
+        function updateMovementsTable() {
+            movementsTable.innerHTML = '';
+            
+            // Limitar a exibição às 5 movimentações mais recentes
+            const recentMovements = movements.slice(0, 5);
+            
+            recentMovements.forEach(movement => {
+                const row = document.createElement('tr');
+                
+                row.innerHTML = `
+                    <td>${movement.date}</td>
+                    <td>${movement.code}</td>
+                    <td>${movement.name}</td>
+                    <td>${movement.type}</td>
+                    <td>${movement.quantity > 0 ? '+' : ''}${movement.quantity}</td>
+                    <td>${movement.user}</td>
+                `;
+                
+                movementsTable.appendChild(row);
+            });
+        }
+
+        // Mostrar notificação
+        function showNotification(message, type) {
+            notification.textContent = message;
+            notification.className = `notification notification-${type}`;
+            notification.style.display = 'block';
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
